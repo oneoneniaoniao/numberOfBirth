@@ -1,7 +1,8 @@
 import React from "react";
+import HighchartsReact from "highcharts-react-official";
+import Highcharts from "highcharts";
 import PrefCheckbox from "./PrefCheckbox ";
-// import styles from "./App.module.scss"
-import { TARGET_PREFECTURES } from "./constants";
+import { TARGET_PREFECTURES, CHART_TYPE } from "./constants";
 import { DemographicsDataType, PrefectureType } from "./types";
 
 type PrefCodeAndNameType = {
@@ -16,12 +17,13 @@ type PrefCodeAndName = {
 
 type BirthDataObjType = {
   prefCode: string;
-  boundaryYear: number;
+  prefName: string;
   birthData: {
     year: number;
-    value: number;
+    value: number | null;
   }[];
 }[];
+
 
 function App() {
   const [isLoading, setIsLoading] = React.useState(true);
@@ -34,6 +36,8 @@ function App() {
   const [birthDataArray, setBirthDataArray] = React.useState<BirthDataObjType>(
     [] as BirthDataObjType
   );
+  const [highchartsOptions, setHighchartsOptions] =
+    React.useState<Highcharts.Options>({});
 
   React.useEffect(() => {
     const _birthDataArray = [] as BirthDataObjType;
@@ -59,7 +63,7 @@ function App() {
               _birthDataArray.push({
                 // Store the prefCode in the _birthData array
                 prefCode: data.prefCode,
-                boundaryYear: 0,
+                prefName: data.prefName,
                 birthData: [],
               });
               return fetch(
@@ -73,24 +77,90 @@ function App() {
               );
             })
         ).then((dataArray) => {
-          dataArray.map((data, index) => {
+          dataArray.forEach((data, index) => {
             data.json().then((data: DemographicsDataType) => {
-              console.log("demographics data", data);
-              _birthDataArray[index].birthData.push(
-                ...data.result.data[3].data
-              );
-              _birthDataArray[index].boundaryYear = data.result.boundaryYear;
+              // Fill in the missing data with null; for data which is not start from 1960.
+              const tempData = data.result.data[3].data;
+              let year = 1960;
+              const NoDataLength =
+                data.result.data[3].data.slice(-1)[0].year -
+                1960 -
+                data.result.data[3].data.length +
+                1;
+              for (let i = 0; i < NoDataLength; i++) {
+                tempData.unshift({
+                  year: year++,
+                  value: null,
+                });
+              }
+              _birthDataArray[index].birthData.push(...tempData);
             });
           });
         });
       })
       .then(() => {
-        setIsLoading(false);
         console.log("_birthDataArray", _birthDataArray);
         setBirthDataArray(_birthDataArray);
+        setIsLoading(false);
       })
       .catch((error) => alert(error.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  React.useEffect(() => {
+    console.log(birthDataArray);
+    setHighchartsOptions({
+      chart: {
+        type: CHART_TYPE,
+      },
+      title: {
+        text: "出生数",
+        align: "center",
+      },
+      yAxis: {
+        title: {
+          text: "人数",
+        },
+      },
+      xAxis: {
+        title: {
+          text: "年",
+        },
+      },
+
+      legend: {
+        layout: "vertical",
+        align: "right",
+        verticalAlign: "middle",
+      },
+      plotOptions: {
+        series: {
+          marker: {
+            enabled: false,
+          },
+          // label: {
+          // connectorAllowed: false,
+          // },
+          pointStart: 1960,
+        },
+      },
+      
+      series: birthDataArray
+        .filter((birthDataObj) =>
+          checkboxes.find((checkbox) => checkbox[birthDataObj.prefName])
+        )
+        .map((birthDataObj) => {
+          return {
+            name: birthDataObj.prefName,
+            data: birthDataObj.birthData.map((birthData) => birthData.value),
+            type: CHART_TYPE,
+          };
+        }),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkboxes]);
+
+  const chartComponentRef = React.useRef<HighchartsReact.RefObject>(null);
 
   if (isLoading) {
     return <p>Now Loading...</p>;
@@ -108,17 +178,20 @@ function App() {
         )
         .map((prefCodeAndName) => {
           return (
-            <>
-              <div key={prefCodeAndName.prefCode}>
-                <PrefCheckbox
-                  prefCodeAndName={prefCodeAndName}
-                  checkboxes={checkboxes}
-                  setCheckboxes={setCheckboxes}
-                />
-              </div>
-            </>
+            <div key={prefCodeAndName.prefCode}>
+              <PrefCheckbox
+                prefCodeAndName={prefCodeAndName}
+                checkboxes={checkboxes}
+                setCheckboxes={setCheckboxes}
+              />
+            </div>
           );
         })}
+      <HighchartsReact
+        highcharts={Highcharts}
+        options={highchartsOptions}
+        ref={chartComponentRef}
+      />
     </>
   );
 }

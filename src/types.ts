@@ -62,7 +62,7 @@ const data = {
         data: [
           {
             year: 2040,
-            value: 6048,
+            value: null
           },
           {
             year: 2045,
@@ -115,7 +115,7 @@ const data = {
         data: [
           {
             year: 1994,
-            value: 96,
+            value: null,
           },
           {
             year: 1995,
