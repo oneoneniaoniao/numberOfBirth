@@ -22,6 +22,17 @@ const PrefCheckbox = ({
   checkboxes,
   setCheckboxes,
 }: Props) => {
+  const handleClickCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCheckboxes = checkboxes.map((checkbox) => {
+      // Update the checkbox that was clicked
+      if (e.target.name === Object.keys(checkbox)[0]) {
+        return { [e.target.name]: e.target.checked };
+      } else {
+        return checkbox;
+      }
+    });
+    setCheckboxes(newCheckboxes);
+  };
 
   return (
     <>
@@ -31,17 +42,7 @@ const PrefCheckbox = ({
           id={`checkbox${prefCodeAndName.prefCode}`}
           name={prefCodeAndName.prefName}
           value={prefCodeAndName.prefName}
-          onChange={(e) => {
-            const newCheckboxes = checkboxes.map((checkbox) => {
-              // Update the checkbox that was clicked
-              if (e.target.name === Object.keys(checkbox)[0]) {
-                return { [e.target.name]: e.target.checked };
-              } else {
-                return checkbox;
-              }
-            });
-            setCheckboxes(newCheckboxes);
-          }}
+          onChange={handleClickCheckbox}
         />
         <label htmlFor={`checkbox${prefCodeAndName.prefCode}`}>
           {prefCodeAndName.prefName}
