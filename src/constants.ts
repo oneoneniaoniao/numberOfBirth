@@ -6,3 +6,6 @@ export const TARGET_PREFECTURES: PrefectureType[] = [
   "京都府",
 ];
 
+export const CHART_TYPE: "spline" | "line" | "area" | "bar" = "spline";
+
+
