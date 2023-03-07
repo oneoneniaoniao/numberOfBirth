@@ -50,7 +50,6 @@ function App() {
     })
       .then((response) => response.json())
       .then((data: PrefCodeAndNameType) => {
-        console.log(data);
         setPrefCodeAndNames(data.result);
         Promise.all(
           // Fetch demographics data for each prefecture
@@ -101,16 +100,14 @@ function App() {
         });
       })
       .then(() => {
-        console.log("_birthDataArray", _birthDataArray);
         setBirthDataArray(_birthDataArray);
         setIsLoading(false);
       })
-      .catch((error) => alert(error.message));
+      .catch((error) => alert(`データの取得に失敗しました。\n${error.message}`));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
-    console.log(birthDataArray);
     setHighchartsOptions({
       chart: {
         type: CHART_TYPE,
