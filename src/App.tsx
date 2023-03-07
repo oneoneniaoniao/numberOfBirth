@@ -241,12 +241,52 @@ function App() {
             );
           })}
       </div>
-      <div style={{ maxWidth: "90vw", width: "800px" }}>
-        <HighchartsReact
-          highcharts={Highcharts}
-          options={highchartsOptions}
-          ref={chartComponentRef}
-        />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateRows: "1fr",
+          gridTemplateColumns: "1fr",
+        }}
+      >
+
+        <div style={{ gridRow: "1/2", gridColumn: "1/2" }}>
+          <div style={{ maxWidth: "90vw", width: "800px" }}>
+            <HighchartsReact
+              highcharts={Highcharts}
+              options={highchartsOptions}
+              ref={chartComponentRef}
+            />
+          </div>
+        </div>
+                {checkboxes.filter((checkbox) => Object.values(checkbox)[0] === true)
+          .length === 0 && (
+          <div style={{ gridRow: "1/2", gridColumn: "1/2" ,zIndex:100}}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                maxWidth: "90vw",
+                width: "800px",
+                height:"90%",
+              }}
+            >
+              <div
+                style={{
+                  color:"#777",
+                  border: "solid 1px #999",
+                  padding: "20px",
+                  borderRadius: "5px",
+                  textAlign: "center",
+                }}
+              >
+                チェックボックスを選択すると
+                <br />
+                グラフが描画されます
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
