@@ -4,6 +4,7 @@ import Highcharts from "highcharts";
 import PrefCheckbox from "./PrefCheckbox ";
 import { TARGET_PREFECTURES, CHART_TYPE } from "./constants";
 import { DemographicsDataType, PrefectureType } from "./types";
+import styles from "./App.module.scss";
 
 type PrefCodeAndNameType = {
   message: null;
@@ -24,7 +25,6 @@ type BirthDataObjType = {
   }[];
 }[];
 
-
 function App() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [prefCodeAndNames, setPrefCodeAndNames] = React.useState<
@@ -38,6 +38,7 @@ function App() {
   );
   const [highchartsOptions, setHighchartsOptions] =
     React.useState<Highcharts.Options>({});
+  const chartComponentRef = React.useRef<HighchartsReact.RefObject>(null);
 
   React.useEffect(() => {
     const _birthDataArray = [] as BirthDataObjType;
@@ -79,7 +80,7 @@ function App() {
         ).then((dataArray) => {
           dataArray.forEach((data, index) => {
             data.json().then((data: DemographicsDataType) => {
-              // Fill in the missing data with null; for data which is not start from 1960.
+              // Fill in the missing data with null for prefectures that is not start from 1960, in case of birth number, Okinawa.
               const tempData = data.result.data[3].data;
               let year = 1960;
               const NoDataLength =
@@ -93,6 +94,7 @@ function App() {
                   value: null,
                 });
               }
+              // Store the formatted birth data in the _birthData array
               _birthDataArray[index].birthData.push(...tempData);
             });
           });
@@ -114,12 +116,12 @@ function App() {
         type: CHART_TYPE,
       },
       title: {
-        text: "出生数",
+        text: "出生数の推移",
         align: "center",
       },
       yAxis: {
         title: {
-          text: "人数",
+          text: "出生数",
         },
       },
       xAxis: {
@@ -138,14 +140,15 @@ function App() {
           marker: {
             enabled: false,
           },
-          // label: {
-          // connectorAllowed: false,
-          // },
           pointStart: 1960,
         },
       },
-      
+      tooltip: {
+        shared: true,
+      },
+
       series: birthDataArray
+        // Filter out the prefectures that are not checked in the checkboxes.
         .filter((birthDataObj) =>
           checkboxes.find((checkbox) => checkbox[birthDataObj.prefName])
         )
@@ -156,43 +159,96 @@ function App() {
             type: CHART_TYPE,
           };
         }),
+      responsive: {
+        rules: [
+          {
+            condition: {
+              maxWidth: 500,
+            },
+            chartOptions: {
+              legend: {
+                layout: "horizontal",
+                align: "center",
+                verticalAlign: "bottom",
+              },
+            },
+          },
+        ],
+      },
     });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkboxes]);
 
-  const chartComponentRef = React.useRef<HighchartsReact.RefObject>(null);
-
   if (isLoading) {
-    return <p>Now Loading...</p>;
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+        }}
+      >
+        <span className={styles.loader}></span>
+        <div>Now Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <>
-      {prefCodeAndNames
-        .filter(
-          // filter out the prefectures that are not in TARGET_PREFECTURES
-          (prefCodeAndName) =>
-            TARGET_PREFECTURES.indexOf(
-              prefCodeAndName.prefName as PrefectureType
-            ) !== -1
-        )
-        .map((prefCodeAndName) => {
-          return (
-            <div key={prefCodeAndName.prefCode}>
-              <PrefCheckbox
-                prefCodeAndName={prefCodeAndName}
-                checkboxes={checkboxes}
-                setCheckboxes={setCheckboxes}
-              />
-            </div>
-          );
-        })}
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={highchartsOptions}
-        ref={chartComponentRef}
-      />
-    </>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        width: "100%",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          flexDirection: "column",
+          alignItems: "space-between",
+          justifyContent: "flex-start",
+          maxWidth: "90vw",
+          width: "800px",
+          height: `${TARGET_PREFECTURES.length * 5}px`,
+          minHeight: "4rem",
+        }}
+      >
+        {prefCodeAndNames
+          .filter(
+            // filter out the prefectures that are not in TARGET_PREFECTURES
+            (prefCodeAndName) =>
+              TARGET_PREFECTURES.indexOf(
+                prefCodeAndName.prefName as PrefectureType
+              ) !== -1
+          )
+          .map((prefCodeAndName) => {
+            return (
+              <div key={prefCodeAndName.prefCode}>
+                <PrefCheckbox
+                  prefCodeAndName={prefCodeAndName}
+                  checkboxes={checkboxes}
+                  setCheckboxes={setCheckboxes}
+                />
+              </div>
+            );
+          })}
+      </div>
+      <div style={{ maxWidth: "90vw", width: "800px" }}>
+        <HighchartsReact
+          highcharts={Highcharts}
+          options={highchartsOptions}
+          ref={chartComponentRef}
+        />
+      </div>
+    </div>
   );
 }
 
